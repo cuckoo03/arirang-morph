@@ -39,13 +39,7 @@ public class MorphAnalyzer {
   /**
    * ending word of sentence.
    */
-  public static final int POS_END = 3;  
-  
-  /**
-   * determin whether one letter is divisible when to divide a compound noun.
-   */
-  private boolean divisibleOne = true;
-  
+  public static final int POS_END = 3;    
   
   private CompoundNounAnalyzer cnAnalyzer = new CompoundNounAnalyzer();  
   
@@ -55,15 +49,6 @@ public class MorphAnalyzer {
   
   public void setExactCompound(boolean is) {
     cnAnalyzer.setExactMach(is);
-  }
-  
-  /**
-   * set if one char can be divisible
-   * @param is
-   */
-  public void setDivisibleOne(boolean is) {
-	  cnAnalyzer.setDivisible(is);
-	  divisibleOne = is;
   }
   
   public List<AnalysisOutput> analyze(String input) throws MorphException {  
@@ -94,9 +79,6 @@ public class MorphAnalyzer {
     		MorphUtil.isNotCorrect(candidates)) || DictionaryUtil.getAllNoun(input)!=null) 
     	addSingleWord(input,candidates);
     
-    // check if one letter exists in the compound noun entries
-    checkOneLetterInCNoun(candidates);
-    
     Collections.sort(candidates,new AnalysisOutputComparator<AnalysisOutput>());
     
     // 복합명사 분해여부 결정하여 분해
@@ -105,10 +87,9 @@ public class MorphAnalyzer {
     for(AnalysisOutput o:candidates) {
     
       if(o.getPatn()==PatternConstants.PTN_N) {
-    	  if(o.getScore()==AnalysisOutput.SCORE_CORRECT) {
-    		  correct=true;
+    	  if(o.getScore()==AnalysisOutput.SCORE_CORRECT) 
     		  break;
-    	  } else
+    	  else
     		  continue;
       }
       
@@ -118,9 +99,7 @@ public class MorphAnalyzer {
       }
       
       if(o.getPatn()<PatternConstants.PTN_VM&&o.getStem().length()>2) {
-        if(!(correct&&o.getPatn()==PatternConstants.PTN_N) 
-        		&& !"내".equals(o.getVsfx())) 
-        	confirmCNoun(o);
+        if(!(correct&&o.getPatn()==PatternConstants.PTN_N)) confirmCNoun(o);
         if(o.getScore()>=AnalysisOutput.SCORE_COMPOUNDS) changed=true;
       }
     
@@ -157,7 +136,7 @@ public class MorphAnalyzer {
         hasCorrect = true;
       }
       else if(o.getPos()==PatternConstants.POS_NOUN
-          &&o.getScore()>=AnalysisOutput.SCORE_SIM_CORRECT) 
+          &&o.getScore()==AnalysisOutput.SCORE_CORRECT) 
       {
         
         if((hasCorrect||correctCnoun)&&o.getCNounList().size()>0) continue;
@@ -329,8 +308,6 @@ public class MorphAnalyzer {
         output.setScore(AnalysisOutput.SCORE_CORRECT);
         candidates.add(0,output);
       }else if(entry.getFeature(WordEntry.IDX_NOUN)=='2') {
-    	output.setScore(AnalysisOutput.SCORE_CORRECT);
-    	output.addCNoun(entry.getCompounds());
         candidates.add(0,output);
       }
       
@@ -487,8 +464,7 @@ public class MorphAnalyzer {
   
   public boolean confirmCNoun(AnalysisOutput o, boolean existInDic) throws MorphException  {
 
-    if(o.getScore()>=AnalysisOutput.SCORE_COMPOUNDS) 
-    	return false;
+    if(o.getStem().length()<3) return false;
         
     List<CompoundEntry> results = cnAnalyzer.analyze(o.getStem());
     boolean hasOneWord = false;
@@ -573,26 +549,5 @@ public class MorphAnalyzer {
       }         
     }       
     return true;
-  }
-  
-  /**
-   * check if one letter exists in the compound entries
-   * @param candidates
-   */
-  private void checkOneLetterInCNoun(List<AnalysisOutput> candidates) {
-	  
-	  if(divisibleOne) return;
-	  
-	  for(AnalysisOutput co : candidates) {
-		  if(co.getCNounList().size()==0) continue;
-		  
-		  List<CompoundEntry> entries = co.getCNounList();
-		  for(CompoundEntry ce : entries) {
-			  if(ce.getWord().length()==1) {
-				  co.getCNounList().clear();
-				  break;
-			  }
-		  }
-	  }
   }
 }

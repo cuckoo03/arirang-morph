@@ -345,8 +345,6 @@ public class NounUtil {
   public static boolean confirmDNoun(AnalysisOutput output) throws MorphException {
 
     int strlen = output.getStem().length();
-    if(strlen<2) return false;
-    
     String d = output.getStem().substring(strlen-1);      
     if(!DNouns.contains(d)) return false;
 
